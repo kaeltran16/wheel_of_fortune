@@ -15,29 +15,29 @@ const KindergartenSelector = () => {
   const [isSelecting, setIsSelecting] = useState(false);
   const [activeIndex, setActiveIndex] = useState(null);
   const [winner, setWinner] = useState(null);
-  const [predetermined, setPredetermined] = useState(null);
   const [isTeacherMode, setIsTeacherMode] = useState(false);
   const [showWinnerDialog, setShowWinnerDialog] = useState(false);
-  
- const students = [
+  const [predetermined, setPredetermined] = useState([]);
+  const [selectedStudents, setSelectedStudents] = useState([]);
+  const students = [
     "🦁 Anh",
     "🐘 Châu",
-    "🐯 Dạt",
+    "🐯 Đạt",
     "🐰 Hào",
     "🐶 Hân",
     "🐱 Hương",
-    "🐼 Khánh",
+    "🐼 Khánh",
     "🦊 Liên",
     "🐸 Bảo Long",
-    "🦒 Thành Long",
-    "🐢 Ngọc Ngân",
+    "🦒 Thành Long",
+    "🐢 Ngọc Ngân",
     "🐨 Bảo Ngân",
     "🦄 Ngọc",
     "🐠 Nhân",
     "🦋 Như",
     "🐝 Oanh",
     "🐹 Phong",
-    "🦉 Phú",
+    "🦉 Phú",
     "🦁 Phúc",
     "🐘 Thọ",
     "🐯 Tiến",
@@ -47,8 +47,10 @@ const KindergartenSelector = () => {
     "🐼 Trực",
     "🦊 Uyên",
     "🐸 Vy",
-    "🐢 Ý"
-  ];
+    "🐢 Ý",
+    "🦦 Yến"
+];
+
 
   const getRandomIndex = (exclude = null) => {
     let newIndex;
@@ -59,13 +61,14 @@ const KindergartenSelector = () => {
   };
 
   const startSelection = () => {
-    if (isSelecting || !predetermined) return;
+    if (isSelecting || predetermined.length === 0) return;
     
     setIsSelecting(true);
     setWinner(null);
     setShowWinnerDialog(false);
     
-    const targetIndex = students.indexOf(predetermined);
+    const currentWinner = predetermined[0];
+    const targetIndex = students.indexOf(currentWinner);
     let jumps = 0;
     const totalJumps = Math.floor(Math.random() * (20 - 15 + 1)) + 15;
     let speed = 250;
@@ -78,8 +81,10 @@ const KindergartenSelector = () => {
       } else {
         setActiveIndex(targetIndex);
         setIsSelecting(false);
-        setWinner(predetermined);
+        setWinner(currentWinner);
         setShowWinnerDialog(true);
+        // Remove the current winner from the predetermined list
+        setPredetermined(prev => prev.slice(1));
       }
     };
     
@@ -88,14 +93,28 @@ const KindergartenSelector = () => {
 
   const toggleTeacherMode = () => {
     setIsTeacherMode(!isTeacherMode);
-    // setPredetermined(null);
-    // setWinner(null);
     setShowWinnerDialog(false);
+  };
+
+  const toggleStudentSelection = (student) => {
+    setSelectedStudents(prev => {
+      if (prev.includes(student)) {
+        return prev.filter(s => s !== student);
+      } else {
+        return [...prev, student];
+      }
+    });
+  };
+
+  const confirmSelection = () => {
+    setPredetermined(selectedStudents);
+    setSelectedStudents([]);
+    toggleTeacherMode();
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-100 to-purple-100 p-8 flex flex-col items-center justify-center">
-      <div className="w-full max-w-4xl">
+      <div className="w-full max-w-7xl">
         {/* Teacher Mode Toggle */}
         <div className="absolute top-4 right-4">
           <button
@@ -117,27 +136,39 @@ const KindergartenSelector = () => {
             Let's Pick a Friend!
             <Star className="w-8 h-8 text-yellow-400 animate-spin" />
           </h1>
+      
         </div>
 
         {/* Teacher Mode Selection Panel */}
         {isTeacherMode && (
           <div className="bg-white p-4 rounded-2xl shadow-lg mb-6">
-            <h2 className="text-purple-600 font-bold mb-4">Choose the Winner:</h2>
+            <h2 className="text-purple-600 font-bold mb-4">Choose Winners Order:</h2>
             <div className="grid grid-cols-4 gap-2">
               {students.map((student) => (
                 <button
                   key={student}
-                  onClick={() => {
-                    setPredetermined(student)
-                    toggleTeacherMode();
-                  }}
+                  onClick={() => toggleStudentSelection(student)}
                   className={`p-2 rounded-xl transition-all
-                    ${predetermined === student ? 'bg-yellow-100 border-2 border-yellow-400' : 'bg-blue-50 hover:bg-blue-100'}
+                    ${selectedStudents.includes(student) 
+                      ? 'bg-yellow-100  border-yellow-400' 
+                      : 'bg-blue-50 hover:bg-blue-100'}
+                   
                   `}
                 >
                   {student}
                 </button>
               ))}
+            </div>
+            <div className="mt-4 flex justify-center">
+              <button
+                onClick={confirmSelection}
+                disabled={selectedStudents.length === 0}
+                className="px-4 py-2 bg-purple-500 text-white rounded-lg
+                         hover:bg-purple-600 disabled:opacity-50
+                         disabled:cursor-not-allowed"
+              >
+                Confirm Selection ({selectedStudents.length})
+              </button>
             </div>
           </div>
         )}
@@ -160,7 +191,7 @@ const KindergartenSelector = () => {
                 <div className="text-center">
                   <div className="text-3xl mb-1">{student.split(' ')[0]}</div>
                   <div className="text-lg font-bold text-purple-600">
-                    {student.split(' ')[1]}
+                    {student.split(' ').slice(1).join(' ')}
                   </div>
                 </div>
                 
@@ -183,7 +214,7 @@ const KindergartenSelector = () => {
         <div className="flex flex-col items-center gap-6">
           <button
             onClick={startSelection}
-            disabled={isSelecting || !predetermined}
+            disabled={isSelecting || predetermined.length === 0}
             className="px-8 py-4 bg-gradient-to-r from-pink-400 to-purple-400 
                      text-white text-2xl font-bold rounded-full shadow-lg
                      hover:from-pink-500 hover:to-purple-500 
@@ -193,9 +224,9 @@ const KindergartenSelector = () => {
             {isSelecting ? '✨ Picking... ✨' : '🌈 Pick a Friend! 🌈'}
           </button>
           
-          {!predetermined && (
+          {predetermined.length === 0 && (
             <div className="text-purple-600 font-medium">
-              {isTeacherMode ? "Please select a winner first" : "Waiting for teacher to set up..."}
+              {isTeacherMode ? "Please select winners first" : "Waiting for teacher to set up..."}
             </div>
           )}
         </div>
